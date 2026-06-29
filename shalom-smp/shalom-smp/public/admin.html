@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shalom SMP — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ember-black:#0a0705; --char:#1c1410; --ash:#4a3f38; --bone:#e8ddd0;
+    --ember:#ff5a1f; --ember-bright:#ff8c42; --ember-deep:#b8260c; --gold:#d4a843;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--ember-black);color:var(--bone);font-family:'Inter',sans-serif;min-height:100vh;}
+  .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+  .login-card{background:var(--char);border:1px solid rgba(255,140,66,0.2);border-radius:16px;padding:40px;max-width:360px;width:100%;}
+  .login-card h1{font-family:'Cinzel',serif;font-size:24px;margin:0 0 6px;}
+  .login-card p{color:var(--ash);font-size:13px;margin:0 0 24px;}
+  input{width:100%;background:rgba(232,221,208,0.06);border:1px solid rgba(255,140,66,0.2);border-radius:8px;padding:12px 14px;color:var(--bone);font-size:14px;margin-bottom:14px;}
+  input:focus{outline:none;border-color:var(--ember-bright);}
+  button{cursor:pointer;border:none;border-radius:8px;font-weight:600;font-size:14px;padding:12px 20px;}
+  .btn-primary{width:100%;background:linear-gradient(135deg,var(--ember),var(--ember-deep));color:#fff7ec;}
+  .err{color:#ff8080;font-size:13px;margin-top:10px;min-height:18px;}
+
+  header{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;border-bottom:1px solid rgba(255,140,66,0.12);}
+  header h1{font-family:'Cinzel',serif;font-size:20px;margin:0;}
+  header .logout{background:none;color:var(--ash);font-size:13px;}
+  header .logout:hover{color:var(--ember-bright);}
+
+  main{padding:32px;max-width:1100px;margin:0 auto;}
+  .summary{display:flex;gap:18px;margin-bottom:28px;flex-wrap:wrap;}
+  .sumcard{background:var(--char);border:1px solid rgba(255,140,66,0.15);border-radius:12px;padding:18px 24px;min-width:140px;}
+  .sumcard .n{font-family:'Cinzel',serif;font-size:26px;color:var(--ember-bright);}
+  .sumcard .l{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ash);margin-top:4px;}
+
+  table{width:100%;border-collapse:collapse;background:var(--char);border-radius:12px;overflow:hidden;}
+  th{text-align:left;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ash);padding:14px 16px;border-bottom:1px solid rgba(255,140,66,0.12);}
+  td{padding:14px 16px;border-bottom:1px solid rgba(255,140,66,0.08);font-size:14px;}
+  tr:last-child td{border-bottom:none;}
+  .pill{font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 10px;border-radius:20px;display:inline-block;}
+  .pill.awaiting_payment{background:rgba(232,221,208,0.1);color:var(--ash);}
+  .pill.paid_pending_approval{background:rgba(212,168,67,0.15);color:var(--gold);}
+  .pill.delivered{background:rgba(74,222,128,0.15);color:#4ade80;}
+  .pill.rejected{background:rgba(255,90,31,0.12);color:#ff8080;}
+  .tier-tag{font-family:'Cinzel',serif;font-weight:700;text-transform:capitalize;}
+  .actions{display:flex;gap:8px;}
+  .btn-approve{background:linear-gradient(135deg,#4ade80,#16a34a);color:#0a0705;}
+  .btn-reject{background:rgba(255,90,31,0.12);color:#ff8080;}
+  .btn-small{padding:8px 14px;font-size:12.5px;}
+  .empty{padding:60px;text-align:center;color:var(--ash);}
+  .refresh{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ash);background:none;border:1px solid rgba(255,140,66,0.2);padding:8px 14px;border-radius:8px;}
+  .refresh:hover{border-color:var(--ember-bright);color:var(--ember-bright);}
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--char);border:1px solid rgba(255,140,66,0.3);padding:14px 20px;border-radius:10px;font-size:13.5px;display:none;max-width:340px;}
+  .toast.show{display:block;}
+  .toast.error{border-color:#ff8080;color:#ff8080;}
+  .hidden{display:none;}
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="loginScreen">
+  <div class="login-card">
+    <h1>Admin Access</h1>
+    <p>Shalom SMP order &amp; delivery panel</p>
+    <input type="password" id="passwordInput" placeholder="Admin password" onkeydown="if(event.key==='Enter')login()">
+    <button class="btn-primary" onclick="login()">Log In</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+</div>
+
+<div class="hidden" id="dashboard">
+  <header>
+    <h1>Shalom SMP — Order Dashboard</h1>
+    <button class="logout" onclick="logout()">Log out</button>
+  </header>
+  <main>
+    <div class="summary" id="summary"></div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
+      <button class="refresh" onclick="loadOrders()">↻ Refresh</button>
+    </div>
+    <table>
+      <thead>
+        <tr><th>IGN</th><th>Email</th><th>Tier</th><th>Amount</th><th>Status</th><th>Created</th><th>Action</th></tr>
+      </thead>
+      <tbody id="ordersBody"></tbody>
+    </table>
+    <div class="empty hidden" id="emptyState">No orders yet.</div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let token = localStorage.getItem('shalom_admin_token') || null;
+
+  function showToast(msg, isError){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(()=>{ t.className = 'toast'; }, 3500);
+  }
+
+  async function login(){
+    const password = document.getElementById('passwordInput').value;
+    const errEl = document.getElementById('loginErr');
+    errEl.textContent = '';
+    try {
+      const res = await fetch('/api/admin/login', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ password })
+      });
+      const data = await res.json();
+      if(!res.ok){ errEl.textContent = data.error || 'Login failed'; return; }
+      token = data.token;
+      localStorage.setItem('shalom_admin_token', token);
+      showDashboard();
+    } catch(e){ errEl.textContent = 'Could not reach server.'; }
+  }
+
+  function logout(){
+    localStorage.removeItem('shalom_admin_token');
+    token = null;
+    document.getElementById('dashboard').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('hidden');
+  }
+
+  function showDashboard(){
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+    loadOrders();
+  }
+
+  async function loadOrders(){
+    try {
+      const res = await fetch('/api/admin/orders', { headers:{ Authorization:'Bearer '+token } });
+      if(res.status === 401){ logout(); return; }
+      const data = await res.json();
+      renderOrders(data.orders);
+    } catch(e){ showToast('Failed to load orders', true); }
+  }
+
+  function renderOrders(orders){
+    const body = document.getElementById('ordersBody');
+    const empty = document.getElementById('emptyState');
+    body.innerHTML = '';
+
+    const counts = { awaiting_payment:0, paid_pending_approval:0, delivered:0, rejected:0 };
+    orders.forEach(o => counts[o.status] = (counts[o.status]||0)+1);
+    document.getElementById('summary').innerHTML = `
+      <div class="sumcard"><div class="n">${counts.paid_pending_approval||0}</div><div class="l">Awaiting Approval</div></div>
+      <div class="sumcard"><div class="n">${counts.delivered||0}</div><div class="l">Delivered</div></div>
+      <div class="sumcard"><div class="n">${orders.length}</div><div class="l">Total Orders</div></div>
+    `;
+
+    if(orders.length === 0){ empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+
+    orders.forEach(o => {
+      const tr = document.createElement('tr');
+      const canApprove = o.status === 'paid_pending_approval';
+      tr.innerHTML = `
+        <td>${o.ign}</td>
+        <td>${o.email}</td>
+        <td><span class="tier-tag">${o.tier}</span></td>
+        <td>₹${o.amount}</td>
+        <td><span class="pill ${o.status}">${o.status.replace(/_/g,' ')}</span></td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ash);">${new Date(o.createdAt).toLocaleString()}</td>
+        <td>
+          <div class="actions">
+            ${canApprove ? `<button class="btn-approve btn-small" onclick="approve('${o.id}')">Approve &amp; Deliver</button>
+            <button class="btn-reject btn-small" onclick="reject('${o.id}')">Reject</button>` : ''}
+          </div>
+        </td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+
+  async function approve(id){
+    try {
+      const res = await fetch(`/api/admin/orders/${id}/approve`, { method:'POST', headers:{ Authorization:'Bearer '+token } });
+      const data = await res.json();
+      if(!res.ok){ showToast(data.error || 'Approval failed', true); return; }
+      showToast('Rank delivered — ran: ' + data.command);
+      loadOrders();
+    } catch(e){ showToast('Network error', true); }
+  }
+
+  async function reject(id){
+    if(!confirm('Reject this order? No rank will be delivered.')) return;
+    await fetch(`/api/admin/orders/${id}/reject`, { method:'POST', headers:{ Authorization:'Bearer '+token } });
+    loadOrders();
+  }
+
+  if(token) showDashboard();
+</script>
+</body>
+</html>

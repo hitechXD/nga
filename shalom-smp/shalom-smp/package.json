@@ -1,0 +1,14 @@
+{
+  "name": "shalom-smp-backend",
+  "version": "1.0.0",
+  "description": "Backend for Shalom SMP: order creation, UroPay webhook receiver, admin RCON delivery panel",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "dotenv": "^16.4.5",
+    "rcon-client": "^4.2.3"
+  }
+}
